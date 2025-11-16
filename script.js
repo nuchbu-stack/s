@@ -1013,6 +1013,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!btn) return;
     backToForm();
   });
+
+  // ✅ สำคัญมาก: เรียกโหลด config + Q0 + ภาษา ตามหน่วยงาน
+  loadServices();
 });
 
 
