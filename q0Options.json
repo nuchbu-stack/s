@@ -518,7 +518,7 @@
         "require_on_list": true,
         "allow_aggregate_in_list": false,
         "people": [
-          { "code": "ee_1" }
+          { "code": "ee_1", "display_th": " " }
         ]
       }
     },
