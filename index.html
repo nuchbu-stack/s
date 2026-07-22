@@ -23,6 +23,11 @@
       <p></p>
     </header>
 
+    <!-- ข้อความปิดปรับปรุงระบบ (โชว์แทนฟอร์มทั้งหมดเมื่อ System.enabled = false หรือ config.enabled ของหน่วยนั้น = false) -->
+    <div class="question hidden" id="maintenanceNotice">
+      <p id="maintenanceMessage" style="text-align:center; font-weight:600;"></p>
+    </div>
+
     <!-- ฟอร์ม -->
     <form id="surveyForm">
 
@@ -64,9 +69,17 @@
       <!-- mode: id -->
       <input type="text" id="studentIdInput" class="hidden" inputmode="numeric" placeholder="กรอกรหัสนักศึกษา" />
 
-      <!-- mode: program -->
+      <!-- mode: program (เลือกหลักสูตรตรง ๆ ไม่แยกคณะ) -->
       <select id="studentProgramSelect" class="hidden">
         <option value="" disabled selected>— เลือก / Select —</option>
+      </select>
+
+      <!-- mode: faculty_program (เลือกคณะก่อน แล้วค่อยเลือกหลักสูตรที่กรองตามคณะ) -->
+      <select id="studentFacultySelect" class="hidden">
+        <option value="" disabled selected>— เลือกคณะ / Select faculty —</option>
+      </select>
+      <select id="studentFacultyProgramSelect" class="hidden">
+        <option value="" disabled selected>— เลือกหลักสูตร / Select program —</option>
       </select>
 
       <div id="studentInfoError" class="error hidden">กรุณากรอกรหัสนักศึกษา</div>

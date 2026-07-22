@@ -6,6 +6,8 @@ const qUserSection = document.getElementById("qUserSection");
 const studentInfoSection = document.getElementById("studentInfoSection");
 const studentIdInput = document.getElementById("studentIdInput");
 const studentProgramSelect = document.getElementById("studentProgramSelect");
+const studentFacultySelect = document.getElementById("studentFacultySelect");
+const studentFacultyProgramSelect = document.getElementById("studentFacultyProgramSelect");
 const q0 = document.getElementById("q0");
 const q0Section = document.getElementById("q0Section");
 const q0Other = document.getElementById("q0Other");
@@ -18,8 +20,14 @@ const thankYou = document.getElementById("thankYou");
 /********************
  * Config
  ********************/
-const GAS_URL = "https://script.google.com/macros/s/AKfycby-SDiwfLzoZgonW_Civm9nvOOkM9YJGxltU5wu0eOPK62BeFdmOvi_WLdA4UE1uf75/exec";
+// ⚠️ นี่คือ URL ของ deployment เดิม (ของจริง) — ตอนทดสอบต้องเปลี่ยนเป็น /exec URL
+// ของ Web App ที่ deploy จาก Apps Script โปรเจกต์ใหม่ (ที่ผูกกับ Google Sheet ทดสอบ) เท่านั้น
+// วิธีเอา URL: ในโปรเจกต์ Apps Script ใหม่ > Deploy > New deployment > Web app
+//   Execute as: Me, Who has access: Anyone > Deploy > copy URL ที่ลงท้ายด้วย /exec
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzCMravCAyRdZWx2xMdSZrpbLFXiLoYr5Yzlii7kFwDrvWNqp8mrAKJ3smBHtuTb22Z/exec";
 const JSON_URL = new URL("q0Options.json", window.location.href).href;
+const PROGRAMS_URL = GAS_URL + "?action=programs"; // อ่านลิสต์คณะ/หลักสูตรจากแท็บ Programs (โหมด faculty_program)
+const CONFIG_URL = GAS_URL + "?action=config"; // อ่านค่า override รายหน่วยงานจากแท็บ UnitsConfig (admin ตั้งค่าผ่าน Sheet แทนแก้ q0Options.json)
 
 // อ่านพารามิเตอร์ URL
 const params = new URLSearchParams(location.search);
@@ -41,6 +49,26 @@ let GROUP                = ""; // กลุ่มหน่วยงาน (facul
 // ตัวแปรเกี่ยวกับฟิลด์ "รหัสนักศึกษา / หลักสูตร" (ตั้งค่าต่อหน่วยงานผ่าน config.studentInfo)
 let STUDENT_INFO_MODE = "off";  // "id" | "program" | "off"
 let STUDENT_INFO_CFG  = null;   // config.studentInfo ดิบของหน่วยงานนั้น
+let DEFAULT_STUDENT_INFO = null; // data.Defaults.studentInfo — ใช้เมื่อหน่วยงานไม่ได้ตั้งค่า config.studentInfo ของตัวเองไว้
+let PROGRAMS_DATA_PROMISE = null; // cache: fetch แค่ครั้งเดียวต่อการโหลดหน้า แม้จะสลับภาษา/เรียก renderStudentInfo หลายรอบ
+let PROGRAMS_CACHE = { faculties: [], programs: [] }; // ผลลัพธ์ล่าสุดจาก fetchProgramsData() ใช้กรองหลักสูตรตามคณะที่เลือก
+
+// ดึงลิสต์คณะ/หลักสูตรจาก Apps Script (แท็บ Programs) — cache ไว้ใน promise เดียวกันกันยิงซ้ำ
+function fetchProgramsData() {
+  if (!PROGRAMS_DATA_PROMISE) {
+    PROGRAMS_DATA_PROMISE = fetch(PROGRAMS_URL)
+      .then(r => r.json())
+      .then(d => (d && d.status === "ok") ? d : { faculties: [], programs: [] })
+      .catch(err => {
+        console.error("โหลดลิสต์คณะ/หลักสูตรไม่สำเร็จ:", err);
+        return { faculties: [], programs: [] };
+      });
+  }
+  return PROGRAMS_DATA_PROMISE;
+}
+
+// ข้อความปิดปรับปรุงระบบ (เก็บไว้ re-render ตอนสลับภาษาระหว่างที่ปิดอยู่)
+let MAINTENANCE_MSG_OBJ = null;
 
 /********************
  * i18n
@@ -58,11 +86,14 @@ const I18N = {
     qUser_error: "กรุณาเลือกผู้รับบริการ",
 
     studentId_label: "รหัสนักศึกษา",
-    studentId_placeholder: "กรอกเฉพาะตัวเลข 6-10 หลัก",
+    studentId_placeholder: "กรอกเฉพาะตัวเลข 10 หลัก",
     studentId_error: "กรุณากรอกรหัสนักศึกษาให้ถูกต้อง",
     program_label: "หลักสูตรที่เรียน",
     program_placeholder: "-- กรุณาเลือกหลักสูตร --",
     program_error: "กรุณาเลือกหลักสูตรที่เรียน",
+    faculty_label: "คณะที่สังกัด",
+    faculty_placeholder: "-- กรุณาเลือกคณะ --",
+    faculty_error: "กรุณาเลือกคณะและหลักสูตรที่เรียน",
 
     q0_label: "เรื่องที่รับบริการ",
     q0_placeholder: "-- กรุณาเลือก --",
@@ -107,11 +138,14 @@ const I18N = {
     qUser_error: "Please select the service recipient.",
 
     studentId_label: "Student ID",
-    studentId_placeholder: "Digits only, 6-10 characters",
+    studentId_placeholder: "Digits only, 10 characters",
     studentId_error: "Please enter a valid student ID.",
     program_label: "Program of study",
     program_placeholder: "-- Please select your program --",
     program_error: "Please select your program of study.",
+    faculty_label: "Faculty",
+    faculty_placeholder: "-- Please select your faculty --",
+    faculty_error: "Please select your faculty and program of study.",
 
     q0_label: "Service Category",
     q0_placeholder: "-- Please select --",
@@ -168,6 +202,32 @@ function pickLabel(obj, lang = "th") {
 function setWebUnitTitle(text) {
   const el = document.getElementById("title-sub");
   if (el) el.textContent = text || "";
+}
+
+/********************
+ * เปิด/ปิดฟอร์มทั้งระบบ หรือรายหน่วยงาน
+ * เรียกจาก loadServices(): เช็ค data.System.enabled (ทั้งระบบ) แล้วค่อยเช็ค cfg.enabled (รายหน่วย)
+ * enabled:false -> ซ่อนฟอร์มทั้งหมด โชว์ข้อความแทน ไม่ต้องเปลี่ยน URL/redeploy ใดๆ
+ ********************/
+function showMaintenance(msgObj) {
+  MAINTENANCE_MSG_OBJ = msgObj || null;
+  form?.classList.add("hidden");
+  qUserSection?.classList.add("hidden");
+
+  const fallback = CURRENT_LANG === "en"
+    ? "The system is temporarily closed for maintenance. Please check back later."
+    : "ขณะนี้ระบบปิดปรับปรุงชั่วคราว กรุณากลับมาใหม่ภายหลัง";
+
+  const msgEl = document.getElementById("maintenanceMessage");
+  if (msgEl) msgEl.textContent = pickLabel(MAINTENANCE_MSG_OBJ, CURRENT_LANG) || fallback;
+
+  document.getElementById("maintenanceNotice")?.classList.remove("hidden");
+}
+
+function hideMaintenance() {
+  MAINTENANCE_MSG_OBJ = null;
+  document.getElementById("maintenanceNotice")?.classList.add("hidden");
+  form?.classList.remove("hidden");
 }
 
 
@@ -230,14 +290,17 @@ function updateErrorTexts() {
   setErrorText("q0Error","q0_error");
   setErrorText("q1Error","q1_error");
   setErrorText("q2Error","q2_error");
-  setErrorText("studentInfoError", STUDENT_INFO_MODE === "program" ? "program_error" : "studentId_error");
+  setErrorText("studentInfoError",
+    STUDENT_INFO_MODE === "faculty_program" ? "faculty_error" :
+    STUDENT_INFO_MODE === "program" ? "program_error" : "studentId_error");
 }
 
 /********************
  * Student Info (รหัสนักศึกษา / หลักสูตร)
  * เปิด/ปิด และเลือกโหมดต่อหน่วยงานผ่าน config.studentInfo:
  *   { mode: "id" }                              -> กรอกรหัสนักศึกษา (text, validate ด้วย idPattern)
- *   { mode: "program", programs: [...] }        -> เลือกหลักสูตรจาก dropdown
+ *   { mode: "program", programs: [...] }        -> เลือกหลักสูตรจาก dropdown (ลิสต์ตายตัวใน q0Options.json)
+ *   { mode: "faculty_program" }                 -> เลือกคณะก่อน แล้วกรองหลักสูตรตามคณะ (อ่านสดจากแท็บ Programs ผ่าน doGet?action=programs)
  *   ไม่ใส่ / { mode: "off" }                     -> ไม่แสดงฟิลด์นี้เลย (ค่า default)
  * โชว์เฉพาะตอนที่ผู้ตอบเลือก "นักศึกษา" ใน qUser เท่านั้น
  ********************/
@@ -253,13 +316,17 @@ function updateStudentInfoVisibility() {
 }
 
 function renderStudentInfo(cfg) {
-  const si = (cfg && cfg.studentInfo) || null;
+  // ลำดับ: config.studentInfo ของหน่วยนั้นเอง (ถ้ามี ใช้อันนี้เสมอ แม้จะเป็น {mode:"off"})
+  // -> ถ้าหน่วยไม่ได้ตั้งค่าอะไรเลย (undefined) ใช้ Defaults.studentInfo แทน
+  const si = (cfg && cfg.studentInfo !== undefined) ? cfg.studentInfo : DEFAULT_STUDENT_INFO;
   STUDENT_INFO_MODE = si && si.mode ? String(si.mode).toLowerCase() : "off";
   STUDENT_INFO_CFG = si;
 
   const labelEl = document.getElementById("studentInfoLabel");
   studentIdInput?.classList.add("hidden");
   studentProgramSelect?.classList.add("hidden");
+  studentFacultySelect?.classList.add("hidden");
+  studentFacultyProgramSelect?.classList.add("hidden");
 
   if (STUDENT_INFO_MODE === "id") {
     const labelText = pickLabel(si.label, CURRENT_LANG) || I18N[CURRENT_LANG].studentId_label;
@@ -290,9 +357,73 @@ function renderStudentInfo(cfg) {
 
       if (prevSelected) studentProgramSelect.value = prevSelected;
     }
+  } else if (STUDENT_INFO_MODE === "faculty_program") {
+    const labelText = pickLabel(si.label, CURRENT_LANG) || I18N[CURRENT_LANG].faculty_label;
+    if (labelEl) labelEl.textContent = labelText;
+
+    if (studentFacultySelect && studentFacultyProgramSelect) {
+      const prevFaculty = studentFacultySelect.value || "";
+      const prevProgram = studentFacultyProgramSelect.value || "";
+
+      studentFacultySelect.classList.remove("hidden");
+      studentFacultyProgramSelect.classList.remove("hidden");
+      studentFacultyProgramSelect.innerHTML =
+        `<option value="" disabled selected>${I18N[CURRENT_LANG].program_placeholder}</option>`;
+
+      fetchProgramsData().then(d => {
+        PROGRAMS_CACHE = d;
+        let opts = `<option value="" disabled selected>${I18N[CURRENT_LANG].faculty_placeholder}</option>`;
+        (d.faculties || []).forEach(f => {
+          const label = pickLabel(f.label, CURRENT_LANG) || f.value;
+          if (!f.value || !label) return;
+          opts += `<option value="${String(f.value).replace(/"/g, '&quot;')}">${label}</option>`;
+        });
+        studentFacultySelect.innerHTML = opts;
+
+        if (prevFaculty) {
+          studentFacultySelect.value = prevFaculty;
+          populateFacultyProgramOptions(prevFaculty, prevProgram);
+        }
+      });
+    }
   }
 
   updateStudentInfoVisibility();
+}
+
+// เติมตัวเลือก "หลักสูตร" ในดรอปดาวน์ที่สอง โดยกรองจาก PROGRAMS_CACHE.programs ตามคณะที่เลือก (facultyValue)
+// keepSelected: ค่าหลักสูตรเดิมที่อยากคงไว้ถ้ายังอยู่ในลิสต์ที่กรองแล้ว (ใช้ตอนสลับภาษา ไม่ใช่ตอนผู้ใช้เปลี่ยนคณะเอง)
+// ถ้าคณะนั้นมีหลักสูตรเดียว/ไม่มีข้อมูล (ไม่มีสาขาให้เลือกจริงๆ เช่น คณะบัญชี) จะซ่อนดรอปดาวน์นี้ทิ้ง
+// และ "ไม่บันทึกชื่อหลักสูตรเลย" (ปล่อยว่าง) เพราะไม่ใช่ข้อมูลที่ผู้ตอบเลือกเอง แค่คณะอย่างเดียวก็พอสื่อความหมายแล้ว
+// dataset.hasChoice บอก submit handler ว่าต้องบังคับเลือกหลักสูตรมั้ย ("0" = ไม่ต้องบังคับ)
+function populateFacultyProgramOptions(facultyValue, keepSelected) {
+  if (!studentFacultyProgramSelect) return;
+  const placeholder = I18N[CURRENT_LANG].program_placeholder;
+
+  const matched = (PROGRAMS_CACHE.programs || [])
+    .filter(p => p.faculty === facultyValue && p.value);
+
+  if (matched.length <= 1) {
+    // ไม่มีสาขาให้เลือกจริง (0 หรือ 1 รายการ) -> ซ่อนดรอปดาวน์ ไม่บังคับเลือก ไม่บันทึกค่าใดๆ
+    studentFacultyProgramSelect.innerHTML = "";
+    studentFacultyProgramSelect.value = "";
+    studentFacultyProgramSelect.classList.add("hidden");
+    studentFacultyProgramSelect.dataset.hasChoice = "0";
+    return;
+  }
+
+  // มีมากกว่า 1 หลักสูตร -> โชว์ดรอปดาวน์ให้เลือกตามปกติ และบังคับเลือก
+  studentFacultyProgramSelect.dataset.hasChoice = "1";
+  studentFacultyProgramSelect.classList.remove("hidden");
+  let opts = `<option value="" disabled selected>${placeholder}</option>`;
+  matched.forEach(p => {
+    const label = pickLabel(p.label, CURRENT_LANG) || p.value;
+    if (!label) return;
+    opts += `<option value="${String(p.value).replace(/"/g, '&quot;')}">${label}</option>`;
+  });
+
+  studentFacultyProgramSelect.innerHTML = opts;
+  if (keepSelected) studentFacultyProgramSelect.value = keepSelected;
 }
 
 document.querySelectorAll('input[name="qUser"]').forEach(radio => {
@@ -309,6 +440,16 @@ studentIdInput?.addEventListener("input", () => {
 });
 studentProgramSelect?.addEventListener("change", () => {
   if (studentProgramSelect.value) {
+    document.getElementById("studentInfoError")?.classList.add("hidden");
+  }
+});
+studentFacultySelect?.addEventListener("change", () => {
+  // เปลี่ยนคณะ -> รีเซ็ตหลักสูตรที่เคยเลือกไว้ แล้วกรองลิสต์หลักสูตรใหม่ตามคณะนี้
+  populateFacultyProgramOptions(studentFacultySelect.value, "");
+  document.getElementById("studentInfoError")?.classList.add("hidden");
+});
+studentFacultyProgramSelect?.addEventListener("change", () => {
+  if (studentFacultyProgramSelect.value) {
     document.getElementById("studentInfoError")?.classList.add("hidden");
   }
 });
@@ -638,11 +779,31 @@ async function loadServices() {
     q0.disabled = true;
     q0.innerHTML = `<option disabled selected>${I18N[CURRENT_LANG].q0_placeholder}</option>`;
 
-    const res = await fetch(JSON_URL + "?v=" + Date.now());
+    // โหลด q0Options.json (static, แก้ไม่บ่อย) พร้อมกับค่า override รายหน่วยจากแท็บ UnitsConfig
+    // (admin ตั้งค่าผ่าน Google Sheet แทนการแก้ JSON ตรงๆ) — ถ้า config fetch พังหรือยังไม่ได้ตั้งค่าไว้
+    // ก็ไม่กระทบฟอร์ม จะ fallback เป็น "ไม่มี override" เฉยๆ
+    const [res, cfgRes] = await Promise.all([
+      fetch(JSON_URL + "?v=" + Date.now()),
+      fetch(CONFIG_URL).catch(() => null)
+    ]);
     const data = await res.json();
+    const liveCfgData = cfgRes ? await cfgRes.json().catch(() => ({})) : {};
+    const unitOverride = (liveCfgData?.units && liveCfgData.units[DEPARTMENT]) || {};
 
-    // QUser: เปิด/ปิดตาม Features.UserType
-    const hasUserType = !!data?.Features?.UserType?.includes(DEPARTMENT);
+    // ปิดทั้งระบบชั่วคราว (System.enabled = false) — เช็คก่อนอย่างอื่นทั้งหมด
+    const sys = data?.System || {};
+    if (sys.enabled === false) {
+      showMaintenance(sys.message);
+      return;
+    }
+    hideMaintenance();
+
+    // ค่า default ของฟิลด์รหัสนักศึกษา/หลักสูตร (ใช้กับหน่วยที่ไม่ได้ตั้ง config.studentInfo เอง)
+    DEFAULT_STUDENT_INFO = data?.Defaults?.studentInfo || null;
+
+    // QUser: เปิด/ปิดตาม Features.UserType (ถ้า UnitsConfig ตั้ง ShowUserType ไว้ ให้ใช้ค่านั้นแทน)
+    let hasUserType = !!data?.Features?.UserType?.includes(DEPARTMENT);
+    if (unitOverride.showUserType !== undefined) hasUserType = unitOverride.showUserType;
     qUserSection?.classList.toggle("hidden", !hasUserType);
     if (!hasUserType) document.getElementById("qUserError")?.classList.add("hidden");
 
@@ -657,6 +818,18 @@ async function loadServices() {
     // รองรับโครงเก่า (array options ตรงๆ)
     if (Array.isArray(conf)) conf = { config: { hasServices: true }, options: conf };
     const cfg = conf.config || {};
+
+    // ใส่ override จาก UnitsConfig ทับ (เฉพาะ field ที่ admin ตั้งค่าไว้จริง ไม่งั้นใช้ค่าจาก JSON เดิม)
+    if (unitOverride.enabled !== undefined) cfg.enabled = unitOverride.enabled;
+    if (unitOverride.studentInfo !== undefined) cfg.studentInfo = unitOverride.studentInfo;
+    if (unitOverride.maintenanceMessage !== undefined) cfg.maintenanceMessage = unitOverride.maintenanceMessage;
+
+    // ปิดเฉพาะหน่วยงานนี้ (config.enabled = false) — เผื่อหน่วยเดียวอยากปิดตอนสรุปผล/พักฟอร์ม
+    if (cfg.enabled === false) {
+      showMaintenance(cfg.maintenanceMessage || sys.message);
+      return;
+    }
+
     GROUP = (cfg.group || "") + "";
     window._UNIT_GROUP = GROUP;
 
@@ -898,15 +1071,16 @@ form.addEventListener("submit", async (e) => {
   // Student Info (รหัสนักศึกษา / หลักสูตร)
   let finalStudentId = "";
   let finalStudentProgram = "";
+  let finalStudentFaculty = "";
   const isStudentInfoVisible = !!(studentInfoSection && !studentInfoSection.classList.contains("hidden"));
   if (isStudentInfoVisible) {
     if (STUDENT_INFO_MODE === "id") {
       const val = (studentIdInput?.value || "").trim();
       let pattern;
       try {
-        pattern = new RegExp(STUDENT_INFO_CFG?.idPattern || "^[0-9]{6,10}$");
+        pattern = new RegExp(STUDENT_INFO_CFG?.idPattern || "^[0-9]{10}$");
       } catch (e) {
-        pattern = /^[0-9]{6,10}$/;
+        pattern = /^[0-9]{10}$/;
       }
       if (!val || !pattern.test(val)) {
         setErrorText("studentInfoError", "studentId_error");
@@ -924,6 +1098,21 @@ form.addEventListener("submit", async (e) => {
         valid = false;
       } else {
         finalStudentProgram = val;
+        document.getElementById("studentInfoError")?.classList.add("hidden");
+      }
+    } else if (STUDENT_INFO_MODE === "faculty_program") {
+      const facultyVal = studentFacultySelect?.value || "";
+      const programVal = studentFacultyProgramSelect?.value || "";
+      // ถ้าคณะนั้นไม่มีสาขาให้เลือกจริง (dataset.hasChoice === "0") ไม่ต้องบังคับเลือกหลักสูตร
+      // และไม่บันทึกชื่อหลักสูตรด้วย (ปล่อยว่างตามที่ตั้งใจ — มีแค่คณะก็พอ)
+      const programRequired = studentFacultyProgramSelect?.dataset.hasChoice !== "0";
+      if (!facultyVal || (programRequired && !programVal)) {
+        setErrorText("studentInfoError", "faculty_error");
+        document.getElementById("studentInfoError")?.classList.remove("hidden");
+        valid = false;
+      } else {
+        finalStudentFaculty = facultyVal;
+        finalStudentProgram = programRequired ? programVal : "";
         document.getElementById("studentInfoError")?.classList.add("hidden");
       }
     }
@@ -1002,6 +1191,7 @@ form.addEventListener("submit", async (e) => {
     studentInfoMode: isStudentInfoVisible ? STUDENT_INFO_MODE : "",
     studentId:       finalStudentId,
     studentProgram:  finalStudentProgram,
+    studentFaculty:  finalStudentFaculty,
 
     q0: finalQ0,
     q1: q1Value,
@@ -1063,6 +1253,8 @@ form.addEventListener("submit", async (e) => {
   // reset ฟิลด์รหัสนักศึกษา/หลักสูตร
   if (studentIdInput) studentIdInput.value = "";
   if (studentProgramSelect) studentProgramSelect.value = "";
+  if (studentFacultySelect) studentFacultySelect.value = "";
+  if (studentFacultyProgramSelect) studentFacultyProgramSelect.value = "";
   document.getElementById("studentInfoError")?.classList.add("hidden");
   updateStudentInfoVisibility(); // จะซ่อนกลับเพราะไม่มี qUser ถูกเลือกแล้ว
 
@@ -1207,6 +1399,9 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("lang", targetLang);
         applyLang(targetLang);
       }
+
+      // ถ้ากำลังอยู่ในโหมดปิดปรับปรุง ให้ re-render ข้อความตามภาษาที่เพิ่งเลือกด้วย
+      if (MAINTENANCE_MSG_OBJ) showMaintenance(MAINTENANCE_MSG_OBJ);
     });
   });
 
