@@ -66,7 +66,17 @@
         "th": "สถาบันภาษา",
         "en": "Language Institute"
       },
-      "providers": { "mode": "aggregate" }
+      "providers": {
+        "mode": "auto",
+        "show_provider_in_ui": "none",
+        "label": { "th": "ผู้ให้บริการ", "en": "Service provider" },
+        "aggregate_label": { "th": "ประเมินรวมทั้งหน่วยงาน", "en": "Evaluate the unit" },
+        "require_on_list": true,
+        "allow_aggregate_in_list": false,
+        "people": [
+          { "code": "LI_1", "display_th": "สถาบันภาษา 1" }
+        ]
+      }      
     },
     "use": "COMMON_STUDENT_SERVICES"
   },
@@ -81,7 +91,17 @@
         "th": "สถาบันภาษา",
         "en": "Language Institute"
       },
-      "providers": { "mode": "aggregate" }
+      "providers": {
+        "mode": "auto",
+        "show_provider_in_ui": "none",
+        "label": { "th": "ผู้ให้บริการ", "en": "Service provider" },
+        "aggregate_label": { "th": "ประเมินรวมทั้งหน่วยงาน", "en": "Evaluate the unit" },
+        "require_on_list": true,
+        "allow_aggregate_in_list": false,
+        "people": [
+          { "code": "LI_2", "display_th": "สถาบันภาษา 2" }
+        ]
+      } 
     },
     "options": [
       "การอธิบายการใช้โปรแกรม Speexx",
@@ -543,7 +563,7 @@
         "require_on_list": true,
         "allow_aggregate_in_list": false,
         "people": [
-          { "code": "ee_2" }
+          { "code": "ee_2", "display_th": "วิศวกรรมศาสตร์ 2" }
         ]
       }
     },
