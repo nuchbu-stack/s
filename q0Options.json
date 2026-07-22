@@ -265,7 +265,7 @@
       "studentInfo": {
         "_comment": "mode:'faculty_program' — หน่วยนี้ให้บริการนักศึกษาข้ามคณะ จึงให้เลือก 'คณะที่สังกัด' ก่อน แล้วกรองหลักสูตรตามคณะ ลิสต์คณะ/หลักสูตรอ่านสดจากแท็บ Programs ในชีท (ผ่าน Apps Script doGet?action=programs) ไม่ได้ตายตัวในไฟล์นี้ — แก้/เพิ่ม/ลดหลักสูตรได้จากแท็บ Programs โดยตรง",
         "mode": "faculty_program",
-        "label": { "th": "คณะที่สังกัด", "en": "Faculty" }
+        "label": { "th": "คณะที่นักศึกษาสังกัด", "en": "Student's Faculty" }
       }
     },
     "_note": "extend { 'use': 'ชื่อแม่แบบ', 'add': [...], 'remove': ['ข้อความไทยที่จะตัด'] }",
