@@ -8,11 +8,31 @@
                  "clinic","records_office","CC","Work-Integ","InterCenter","Fin","CorpCom","QA",
                  "STUDEV","Supply","Purchase","SportsF","SportsE"],
 
-    "_comment_studentInfo": "ใหม่: ฟิลด์ 'รหัสนักศึกษา / หลักสูตร' ที่จะโชว์ต่อเมื่อ (1) หน่วยนั้นอยู่ใน UserType ด้านบน และ (2) ผู้ตอบเลือก 'นักศึกษา'. ตั้งค่าที่ config.studentInfo ของแต่ละหน่วยงานด้านล่าง (ไม่ใช่ list ตรงนี้ เพราะแต่ละหน่วยต้องเลือก mode ต่างกันได้). ถ้าหน่วยไหนไม่ใส่ config.studentInfo หรือใส่ mode:'off' = ไม่แสดงฟิลด์นี้เลย (ค่า default).",
+    "_comment_studentInfo": "ใหม่: ฟิลด์ 'รหัสนักศึกษา / หลักสูตร' ที่จะโชว์ต่อเมื่อ (1) หน่วยนั้นอยู่ใน UserType ด้านบน และ (2) ผู้ตอบเลือก 'นักศึกษา'. ตั้งค่าที่ config.studentInfo ของแต่ละหน่วยงานด้านล่าง (ไม่ใช่ list ตรงนี้ เพราะแต่ละหน่วยต้องเลือก mode ต่างกันได้). ถ้าหน่วยไหนไม่ใส่ config.studentInfo เลย จะใช้ค่าจาก Defaults.studentInfo แทน (ตอนนี้คือ mode:'id' ให้ทุกหน่วยกรอกรหัสนักศึกษา) — ถ้าหน่วยไหนอยากได้โหมดอื่น หรือไม่อยากมีฟิลด์นี้เลย ให้ใส่ config.studentInfo ของหน่วยนั้นทับ (เช่น mode:'off') เท่านั้นพอ ไม่ต้องแก้ทุกหน่วย.",
     "_studentInfo_modes": {
       "id":      "ให้กรอกรหัสนักศึกษาเป็นข้อความ ตรวจสอบเบื้องต้นด้วย regex (idPattern) — ยังไม่ได้ตรวจกับฐานข้อมูลนักศึกษาจริง รอแหล่งข้อมูลยืนยันจากสำนักทะเบียนก่อน",
-      "program": "ให้เลือกหลักสูตร/สาขาที่เรียนจาก dropdown ตาม config.studentInfo.programs ของหน่วยนั้น",
-      "off":     "ไม่แสดงฟิลด์นี้ (ค่าเริ่มต้นถ้าไม่ระบุ)"
+      "program": "ให้เลือกหลักสูตร/สาขาที่เรียนจาก dropdown ตาม config.studentInfo.programs ของหน่วยนั้น (ลิสต์ตายตัวในไฟล์นี้ เหมาะกับหน่วยที่รับเฉพาะนักศึกษาคณะเดียว)",
+      "faculty_program": "ให้เลือก 'คณะที่สังกัด' ก่อน แล้วกรองหลักสูตรตามคณะที่เลือก โดยลิสต์คณะ/หลักสูตรอ่านสดจากแท็บ Programs ในชีท (ผ่าน doGet?action=programs) เหมาะกับหน่วยที่ให้บริการนักศึกษาข้ามคณะ",
+      "off":     "ไม่แสดงฟิลด์นี้ (ค่าเริ่มต้นถ้าไม่ระบุ และไม่มี Defaults.studentInfo)"
+    }
+  },
+
+  "System": {
+    "_comment": "สวิตช์เปิด/ปิดฟอร์มทั้งระบบ (เผื่อปิดตอนอัปเดตเว็บ หรือปิดตอนสรุปผลประจำภาค). enabled:false = ทุกหน่วยงานเห็นข้อความปิดปรับปรุงแทนฟอร์ม ไม่ต้องเปลี่ยน URL หรือ redeploy ใดๆ แค่แก้ค่านี้แล้ว refresh หน้าเว็บ",
+    "enabled": true,
+    "message": {
+      "th": "ขณะนี้ระบบปิดปรับปรุงชั่วคราว ขออภัยในความไม่สะดวก กรุณากลับมาทำแบบประเมินใหม่ภายหลัง",
+      "en": "The system is temporarily closed for maintenance. We apologize for the inconvenience — please check back later."
+    }
+  },
+
+  "Defaults": {
+    "_comment": "ค่า default ที่ใช้กับทุกหน่วยงานที่ไม่ได้ตั้งค่า config.studentInfo ของตัวเองไว้ (ลดงานแก้ JSON ทีละหน่วย). ถ้าหน่วยไหนต้องการโหมดอื่น หรือไม่ต้องการฟิลด์นี้เลย ให้ใส่ config.studentInfo ของหน่วยนั้นทับค่านี้ได้เสมอ (เช่น {\"mode\":\"off\"} หรือ {\"mode\":\"program\", ...}).",
+    "studentInfo": {
+      "mode": "id",
+      "label": { "th": "รหัสนักศึกษา", "en": "Student ID" },
+      "idPattern": "^[0-9]{10}$",
+      "idPatternHint": { "th": "กรอกรหัสนักศึกษา (ตัวเลข 10 หลัก)", "en": "Enter student ID (10 digits)" }
     }
   },
 
@@ -66,17 +86,7 @@
         "th": "สถาบันภาษา",
         "en": "Language Institute"
       },
-      "providers": {
-        "mode": "auto",
-        "show_provider_in_ui": "none",
-        "label": { "th": "ผู้ให้บริการ", "en": "Service provider" },
-        "aggregate_label": { "th": "ประเมินรวมทั้งหน่วยงาน", "en": "Evaluate the unit" },
-        "require_on_list": true,
-        "allow_aggregate_in_list": false,
-        "people": [
-          { "code": "LI_1", "display_th": "สถาบันภาษา 1" }
-        ]
-      }      
+      "providers": { "mode": "aggregate" }
     },
     "use": "COMMON_STUDENT_SERVICES"
   },
@@ -91,17 +101,7 @@
         "th": "สถาบันภาษา",
         "en": "Language Institute"
       },
-      "providers": {
-        "mode": "auto",
-        "show_provider_in_ui": "none",
-        "label": { "th": "ผู้ให้บริการ", "en": "Service provider" },
-        "aggregate_label": { "th": "ประเมินรวมทั้งหน่วยงาน", "en": "Evaluate the unit" },
-        "require_on_list": true,
-        "allow_aggregate_in_list": false,
-        "people": [
-          { "code": "LI_2", "display_th": "สถาบันภาษา 2" }
-        ]
-      } 
+      "providers": { "mode": "aggregate" }
     },
     "options": [
       "การอธิบายการใช้โปรแกรม Speexx",
@@ -155,8 +155,8 @@
         "_comment": "ตัวอย่าง mode:'id' — ให้กรอกรหัสนักศึกษาเป็นข้อความ",
         "mode": "id",
         "label": { "th": "รหัสนักศึกษา", "en": "Student ID" },
-        "idPattern": "^[0-9]{6,10}$",
-        "idPatternHint": { "th": "กรอกเฉพาะตัวเลข 6-10 หลัก", "en": "Digits only, 6-10 characters" }
+        "idPattern": "^[0-9]{10}$",
+        "idPatternHint": { "th": "กรอกเฉพาะตัวเลข 10 หลัก", "en": "Digits only, 10 characters" }
       }
     },
     "use": "COMMON_STUDENT_SERVICES"
@@ -243,15 +243,9 @@
         ]
       },
       "studentInfo": {
-        "_comment": "ตัวอย่าง mode:'program' — ให้เลือกหลักสูตรจาก dropdown แทนกรอกรหัส (ใส่รายชื่อหลักสูตรจริงของคณะแทนตัวอย่างด้านล่าง)",
-        "mode": "program",
-        "label": { "th": "หลักสูตรที่เรียน", "en": "Program of study" },
-        "programs": [
-          { "th": "การท่องเที่ยว", "en": "Tourism" },
-          { "th": "การโรงแรม", "en": "Hotel Management" },
-          { "th": "ภาษาอังกฤษ", "en": "English" },
-          { "th": "อื่นๆ", "en": "Other(s)" }
-        ]
+        "_comment": "mode:'faculty_program' — หน่วยนี้ให้บริการนักศึกษาข้ามคณะ จึงให้เลือก 'คณะที่สังกัด' ก่อน แล้วกรองหลักสูตรตามคณะ ลิสต์คณะ/หลักสูตรอ่านสดจากแท็บ Programs ในชีท (ผ่าน Apps Script doGet?action=programs) ไม่ได้ตายตัวในไฟล์นี้ — แก้/เพิ่ม/ลดหลักสูตรได้จากแท็บ Programs โดยตรง",
+        "mode": "faculty_program",
+        "label": { "th": "คณะที่สังกัด", "en": "Faculty" }
       }
     },
     "_note": "extend { 'use': 'ชื่อแม่แบบ', 'add': [...], 'remove': ['ข้อความไทยที่จะตัด'] }",
@@ -538,7 +532,7 @@
         "require_on_list": true,
         "allow_aggregate_in_list": false,
         "people": [
-          { "code": "ee_1", "display_th": "วิศวกรรมศาสตร์ 1" }
+          { "code": "ee_1" }
         ]
       }
     },
@@ -563,7 +557,7 @@
         "require_on_list": true,
         "allow_aggregate_in_list": false,
         "people": [
-          { "code": "ee_2", "display_th": "วิศวกรรมศาสตร์ 2" }
+          { "code": "ee_2" }
         ]
       }
     },
