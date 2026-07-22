@@ -24,7 +24,7 @@ const thankYou = document.getElementById("thankYou");
 // ของ Web App ที่ deploy จาก Apps Script โปรเจกต์ใหม่ (ที่ผูกกับ Google Sheet ทดสอบ) เท่านั้น
 // วิธีเอา URL: ในโปรเจกต์ Apps Script ใหม่ > Deploy > New deployment > Web app
 //   Execute as: Me, Who has access: Anyone > Deploy > copy URL ที่ลงท้ายด้วย /exec
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzCMravCAyRdZWx2xMdSZrpbLFXiLoYr5Yzlii7kFwDrvWNqp8mrAKJ3smBHtuTb22Z/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby-SDiwfLzoZgonW_Civm9nvOOkM9YJGxltU5wu0eOPK62BeFdmOvi_WLdA4UE1uf75/exec";
 const JSON_URL = new URL("q0Options.json", window.location.href).href;
 const PROGRAMS_URL = GAS_URL + "?action=programs"; // อ่านลิสต์คณะ/หลักสูตรจากแท็บ Programs (โหมด faculty_program)
 const CONFIG_URL = GAS_URL + "?action=config"; // อ่านค่า override รายหน่วยงานจากแท็บ UnitsConfig (admin ตั้งค่าผ่าน Sheet แทนแก้ q0Options.json)
@@ -91,7 +91,7 @@ const I18N = {
     program_label: "หลักสูตรที่เรียน",
     program_placeholder: "-- กรุณาเลือกหลักสูตร --",
     program_error: "กรุณาเลือกหลักสูตรที่เรียน",
-    faculty_label: "คณะที่สังกัด",
+    faculty_label: "คณะที่นักศึกษาสังกัด",
     faculty_placeholder: "-- กรุณาเลือกคณะ --",
     faculty_error: "กรุณาเลือกคณะและหลักสูตรที่เรียน",
 
@@ -143,7 +143,7 @@ const I18N = {
     program_label: "Program of study",
     program_placeholder: "-- Please select your program --",
     program_error: "Please select your program of study.",
-    faculty_label: "Faculty",
+    faculty_label: "Student's Faculty",
     faculty_placeholder: "-- Please select your faculty --",
     faculty_error: "Please select your faculty and program of study.",
 
