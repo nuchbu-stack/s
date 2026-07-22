@@ -18,7 +18,7 @@ const thankYou = document.getElementById("thankYou");
 /********************
  * Config
  ********************/
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzCMravCAyRdZWx2xMdSZrpbLFXiLoYr5Yzlii7kFwDrvWNqp8mrAKJ3smBHtuTb22Z/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycby-SDiwfLzoZgonW_Civm9nvOOkM9YJGxltU5wu0eOPK62BeFdmOvi_WLdA4UE1uf75/exec";
 const JSON_URL = new URL("q0Options.json", window.location.href).href;
 
 // อ่านพารามิเตอร์ URL
