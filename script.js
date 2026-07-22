@@ -366,9 +366,9 @@ function renderStudentInfo(cfg) {
       const prevProgram = studentFacultyProgramSelect.value || "";
 
       studentFacultySelect.classList.remove("hidden");
-      studentFacultyProgramSelect.classList.remove("hidden");
-      studentFacultyProgramSelect.innerHTML =
-        `<option value="" disabled selected>${I18N[CURRENT_LANG].program_placeholder}</option>`;
+      // ดรอปดาวน์หลักสูตรยังไม่โชว์จนกว่าจะเลือกคณะก่อน (populateFacultyProgramOptions จะเป็นคนโชว์/ซ่อนเอง)
+      studentFacultyProgramSelect.innerHTML = "";
+      studentFacultyProgramSelect.classList.add("hidden");
 
       fetchProgramsData().then(d => {
         PROGRAMS_CACHE = d;
