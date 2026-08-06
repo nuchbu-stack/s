@@ -775,9 +775,17 @@ function initLangForDept(cfg) {
 
 
 async function loadServices() {
+  // กันคนกดส่งฟอร์มได้ก่อนที่ข้อมูล (q0Options.json + config) จะโหลดเสร็จ — ปิดปุ่มส่งไว้ก่อน
+  // แล้วค่อยเปิดกลับตอนจบฟังก์ชันนี้ (ทั้งกรณีสำเร็จและ error)
+  const submitBtnEl = document.getElementById("submitBtn");
+  if (submitBtnEl) submitBtnEl.disabled = true;
+
   try {
     q0.disabled = true;
-    q0.innerHTML = `<option disabled selected>${I18N[CURRENT_LANG].q0_placeholder}</option>`;
+    // ⚠️ ต้องใส่ value="" ให้ตัวเลือก placeholder เสมอ ไม่งั้น browser จะเอาข้อความ label
+    // ("-- กรุณาเลือก --") มาเป็น q0.value แทน (เพราะ <option> ที่ไม่มี value attribute
+    // จะถือว่า value = ข้อความในตัวเอง) ทำให้ผ่านเช็ค required ตอน submit ทั้งที่ยังไม่ได้เลือกอะไรจริง
+    q0.innerHTML = `<option value="" disabled selected>${I18N[CURRENT_LANG].q0_placeholder}</option>`;
 
     // โหลด q0Options.json (static, แก้ไม่บ่อย) พร้อมกับค่า override รายหน่วยจากแท็บ UnitsConfig
     // (admin ตั้งค่าผ่าน Google Sheet แทนการแก้ JSON ตรงๆ) — ถ้า config fetch พังหรือยังไม่ได้ตั้งค่าไว้
@@ -942,6 +950,10 @@ async function loadServices() {
     q0.value = "--";
     q0Other.value = "";
     q0Other.classList.add("hidden");
+  } finally {
+    // เปิดปุ่มส่งกลับคืนเสมอไม่ว่าจะจบทางไหน (สำเร็จ/error/return กลางทางเช่นโหมดปิดปรับปรุง)
+    // ถ้าเป็นโหมดปิดปรับปรุงอยู่แล้วฟอร์มทั้งหมดจะถูกซ่อนอยู่ดี ปุ่มเปิดหรือปิดจึงไม่กระทบอะไร
+    if (submitBtnEl) submitBtnEl.disabled = false;
   }
 }
 
